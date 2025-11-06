@@ -1,6 +1,6 @@
 # AI BlogCraft
 
-AI BlogCraft is an AI-assisted blogging SaaS starter built with Next.js 14, TypeScript, Prisma, NextAuth, Tailwind CSS, and the OpenAI API. It helps marketing teams generate, edit, and manage SEO-friendly blog posts with subscription billing powered by Stripe.
+AI BlogCraft is an AI-assisted blogging SaaS starter built with Next.js 14, TypeScript, Prisma, NextAuth, Tailwind CSS, and a local Ollama model. It helps marketing teams generate, edit, and manage SEO-friendly blog posts with subscription billing powered by Stripe.
 
 ## Features
 - **AI blog generation** with topic, tone, keywords, audience, and length controls.
@@ -31,7 +31,7 @@ AI BlogCraft is an AI-assisted blogging SaaS starter built with Next.js 14, Type
    ```
 
 ## Environment variables
-See `.env.example` for all required values, including OpenAI, NextAuth, database, and Stripe secrets.
+See `.env.example` for all required values, including Ollama, NextAuth, database, and Stripe secrets.
 
 ## License
 MIT

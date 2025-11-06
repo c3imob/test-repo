@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,21 +17,60 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
   const body = await request.json();
-  const { introduction, body: contentBody, conclusion, keywords, seo, tone, audience, length } = body;
+  const { title, introduction, body: contentBody, conclusion, keywords, seo, tone, audience, length } = body;
+
+  const parsedKeywords =
+    typeof keywords === "string"
+      ? Array.from(
+          new Set(
+            keywords
+              .split(",")
+              .map((keyword) => keyword.trim())
+              .filter(Boolean)
+          )
+        )
+      : Array.isArray(keywords)
+        ? Array.from(
+            new Set(
+              keywords
+                .filter((keyword): keyword is string => typeof keyword === "string")
+                .map((keyword) => keyword.trim())
+                .filter(Boolean)
+            )
+          )
+        : keywords === null
+          ? []
+          : undefined;
+
+  const keywordUpdate =
+    parsedKeywords !== undefined
+      ? parsedKeywords.length > 0
+        ? {
+            deleteMany: {},
+            create: parsedKeywords.map((value) => ({ value }))
+          }
+        : { deleteMany: {} }
+      : undefined;
+
+  const updateData: Prisma.PostUpdateInput = {
+    title,
+    introduction,
+    body: contentBody,
+    conclusion,
+    seo,
+    tone,
+    audience,
+    length: length ? lengthMap[length as keyof typeof lengthMap] ?? undefined : undefined
+  };
+
+  if (keywordUpdate) {
+    updateData.keywords = keywordUpdate;
+  }
 
   try {
     const updated = await prisma.post.update({
       where: { id: params.id, userId: session.user.id },
-      data: {
-        introduction,
-        body: contentBody,
-        conclusion,
-        keywords,
-        seo,
-        tone,
-        audience,
-        length: length ? lengthMap[length as keyof typeof lengthMap] ?? undefined : undefined
-      }
+      data: updateData
     });
 
     return NextResponse.json({ success: true, updatedAt: updated.updatedAt });

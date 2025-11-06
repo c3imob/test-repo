@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { FREE_GENERATION_LIMIT, getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { incrementUsage, getUsageForUser } from "@/lib/usage";
-import { BlogSection, generateBlog, regenerateSection } from "@/server/openai";
+import { BlogSection, generateBlog, regenerateSection } from "@/server/ollama";
 
 const lengthMap = {
   short: "SHORT",
@@ -79,16 +79,27 @@ export async function POST(request: Request) {
   }
 
   try {
+    const parsedKeywords = keywords
+      ? Array.from(
+          new Set(
+            keywords
+              .split(",")
+              .map((keyword: string) => keyword.trim())
+              .filter(Boolean)
+          )
+        )
+      : [];
+
     const result = await generateBlog({ title, keywords, tone, audience, length });
     const created = await prisma.post.create({
       data: {
         title,
-        keywords: keywords
-          ? keywords
-              .split(",")
-              .map((keyword: string) => keyword.trim())
-              .filter(Boolean)
-          : [],
+        keywords:
+          parsedKeywords.length > 0
+            ? {
+                create: parsedKeywords.map((value) => ({ value })),
+              }
+            : undefined,
         tone,
         audience,
         length: lengthMap[length],
@@ -106,6 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       postId: created.id,
+      keywords: parsedKeywords,
       introduction: result.introduction,
       body: result.body,
       conclusion: result.conclusion,
