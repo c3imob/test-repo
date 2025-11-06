@@ -1,5 +1,10 @@
+// Prisma schema converted for MySQL
+// - provider switched to "mysql"
+// - Post.keywords (String[]) normalized into Keyword relation
+// - Long text fields marked as @db.LongText for MySQL
+
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -19,36 +24,47 @@ enum LengthPreference {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String?   @unique
+  email         String?        @unique
   emailVerified DateTime?
   image         String?
-  role          Role      @default(FREE)
+  role          Role           @default(FREE)
   posts         Post[]
   accounts      Account[]
   sessions      Session[]
   usage         Usage[]
   subscription  Subscription?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Post {
-  id          String            @id @default(cuid())
-  title       String
-  keywords    String[]          @default([])
-  tone        String
-  audience    String
-  length      LengthPreference
-  introduction String
-  body        String
-  conclusion  String
-  seo         Json?
-  user        User              @relation(fields: [userId], references: [id])
-  userId      String
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  title        String
+  tone         String
+  audience     String
+  length       LengthPreference
+  introduction String            @db.LongText
+  body         String            @db.LongText
+  conclusion   String            @db.LongText
+  seo          Json?
+  user         User              @relation(fields: [userId], references: [id])
+  userId       String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  // relation replacing the previous String[] keywords
+  keywords     Keyword[]
+}
+
+model Keyword {
+  id      String  @id @default(cuid())
+  value   String
+  post    Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId  String
+
+  @@unique([postId, value]) // prevent duplicate keywords per post
 }
 
 model Usage {
